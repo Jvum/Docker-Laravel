@@ -2,7 +2,7 @@ steps:
 
 - id: "Rodan2do docker-compose"
   name: 'gcr.io/$PROJECT_ID/docker-compose:1.25.5'
-  args: ['-f','docker-compose.cloudbuild.yaml','up','-d']
+  args: ['-f','docker-compose.cloudbuild.yaml','up','-d','--build']
 
 - id: "Rodando docker ps"
   name: 'gcr.io/cloud-builders/docker'
