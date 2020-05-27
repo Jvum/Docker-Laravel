@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+
+    app:
+        build: .
+        container_name: app
+        volumes: 
+            - .:/var/www
+        #entrypoint: dockerize -template ./.docker/app/.env:.env -wait tcp://db:3306 -timeout 40s ./.docker/entrypoint.sh
+     #   environment: 
+     #       - DB_HOST=db
+     #       - DB_DATABASE=laravel
+    #        - DB_USERNAME=root
+    #        - DB_PASSWORD=root
+        networks: 
+            - app-network
+        #Só inicia o app quando o db tiver pronto
+        depends_on: 
+            - db
+            - redis
+
+    nginx: 
+        build: .docker/nginx/.
+        container_name: nginx
+        entrypoint: dockerize -template /etc/nginx/conf.d/nginx.conf:/etc/nginx/conf.d/nginx.conf nginx -g 'daemon off;'
+        restart: always
+        #allow intern container operations with exec -it
+        tty: true
+        ports:
+            - "8001:80"
+        volumes:
+            - .:/var/www
+        environment: 
+            - NG_SERVER=app
+            - NG_PORT=9000
+        networks: 
+            - app-network
+        depends_on: 
+            - app
+
+    redis:
+        image: redis:alpine
+        expose:
+            - 6379
+        networks: 
+            - app-network
+
+    db:
+        image: mysql:5.7
+        command: --innodb-use-native-aio=0
+        container_name: db
+        restart: always
+        tty: true
+        ports: 
+            - "3306:3306"
+            #Volume é necessário para que o container não exclua todo seu banco de dados em todo down do composer
+        volumes:
+            - ./.docker/dbdata:/var/lib/mysql
+        environment: 
+            - MYSQL_DATABASE=laravel
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_USER=root
+        networks:
+            - app-network
+        #versao 2.3
+        #healthcheck:
+         #   test: ["CMD-SHELL", 'mysql -uroot --database=laravel --password=root --execute="SELECT count(table_name) > 0 FROM information_schema.tables;" --skip-column-names B']
+          #  interval: 10s
+           # timeout: 10s
+            #retries: 4
+
+networks: 
+    app-network:
+        driver: bridge
