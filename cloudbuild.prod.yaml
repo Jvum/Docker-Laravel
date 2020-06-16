@@ -36,6 +36,7 @@ steps:
   name: 'gcr.io/cloud-builders/docker'
   args: ['push','gcr.io/$PROJECT_ID/app-laravel:$SHORT_SHA']
 
+  #Comando sed realiza um replace nos arquivos
 - id: "Adjusting deployment file - k8s"
   name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: '/bin/sh'
@@ -45,6 +46,7 @@ steps:
       sed 's#img-app-deployment#gc.io/$PROJECT_ID/app-laravel:$SHORT_SHA#g' k8s/app/deployment.yaml > k8s/app/deployment-new.yaml
       cat k8s/app/deployment-new.yaml;
 
+#Necessário criar um Google Service Account no IAM com liberdade de Admin para Kubernates Engine      
 - id: 'Deploying k8s'
   name: 'gcr.io/cloud-builders/kubectl'
   args:
@@ -53,4 +55,4 @@ steps:
     - 'k8s/app/deployment-new.yaml'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
-  - 'CLOUDSK_CONTAINER_CLUSTER=cluster-docker-laravel'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-docker-laravel'
